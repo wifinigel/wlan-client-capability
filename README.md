@@ -3,7 +3,7 @@ Python script to check wireless (802.11) capabilities based on authentication fr
 
 This script uses scapy to listen for an authenciation frame from a client. It will then capture that frame and analyze it to create a report based on the capabilities reported by the client device. It can also be used to analyze the contents of a pcap file that contains a single authentication frame.
 
-It has been developed to be used with the NanoPi that was created for the WLPC Phoenix 2018 conference. The NanoPi (also called the WLANPi) it a great little mini-Linux appliance that lends itself to a whole range of network testing applications. Find out more about the NanoPi at [http://wlanpi.com](http://wlanpi.com)
+It has been developed to be used with the NanoPi that was created for the [WLPC Phoenix 2018 conference](https://www.wlanpros.com/resource/?wpv-category=2018-phoenix&wpv_aux_current_post_id=2623&wpv_view_count=464-TCPID2623). The NanoPi (also called the WLANPi) it a great little mini-Linux appliance that lends itself to a whole range of network testing applications. Find out more about the NanoPi at [http://wlanpi.com](http://wlanpi.com)
 
 ## Using the Script
 To use the script on the NanoPi, transfer the wlan-client-capability.py script to the NanoPi. Ensure that a USB wireless adapter (e.g. Comfast CF-912AC) is plugged in to the NanoPi.
