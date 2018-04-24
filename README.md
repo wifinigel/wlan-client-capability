@@ -47,6 +47,10 @@ root@wlanpi:/home/wlanpi/python# wlan-client-capability.py -c wlan0 aa:bb:cc:dd:
 root@wlanpi:/home/wlanpi/python# wlan-client-capability.py -f last_frame.pcap
 ```
 
+## Screenshot
+
+![Screenshot](https://github.com/wifinigel/wlan-client-capability/blob/master/screenshot.PNG)
+
 ## Caveats
 - Note that this is work in progress and is not production ready and is not fully tested or guaranteed to report accurate info. **You have been warned**
 - A client will generally only report the capabilities it has that match the network it associates to. If you want the client to report all of its capabilities, it **must** be associating with a network that supports those capabilities. **You have been warned**
