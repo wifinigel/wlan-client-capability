@@ -1,7 +1,6 @@
 #!/usr/bin/python
 from __future__ import print_function, unicode_literals, division
 import sys
-import pprint
 from textwrap import wrap
 from scapy.all import *
 
@@ -189,8 +188,7 @@ def main():
         mon_iface = sys.argv[2]
         client_mac = sys.argv[3]
         
-        sniff(iface=mon_iface, prn=PktHandler, filter='type mgt')
-        #sniff(iface=mon_iface, prn=PktHandler)
+        sniff(iface=mon_iface, prn=PktHandler)
     else:
         Usage()
 
