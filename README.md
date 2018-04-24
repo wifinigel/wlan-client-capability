@@ -6,7 +6,7 @@ This script uses scapy to listen for an authenciation frame from a client. It wi
 It has been developed to be used with the NanoPi that was created for the [WLPC Phoenix 2018 conference](https://www.wlanpros.com/resource/?wpv-category=2018-phoenix&wpv_aux_current_post_id=2623&wpv_view_count=464-TCPID2623). The NanoPi (also called the WLANPi) it a great little mini-Linux appliance that lends itself to a whole range of network testing applications. Find out more about the NanoPi at [http://wlanpi.com](http://wlanpi.com)
 
 ## Using the Script
-To use the script on the NanoPi, transfer the wlan-client-capability.py script to the NanoPi. Ensure that a USB wireless adapter (e.g. Comfast CF-912AC) is plugged in to the NanoPi.
+To use the script on the NanoPi, transfer the wlan-client-capability.py script to the NanoPi (make it executable with "chmod a+x wlan_client_capability.py"). Ensure that a USB wireless adapter (e.g. Comfast CF-912AC) is plugged in to the NanoPi.
 
 SSH to the NanoPi and place the wireless NIC on the channel you wish to monitor:
 
