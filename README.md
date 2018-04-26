@@ -38,7 +38,7 @@ root@wlanpi:/home/wlanpi/python# wlan-client-capability.py -c wlan0 aa:bb:cc:dd:
 
 ```
 # capture frame for next client that send assocation frame on interface wlan0
-root@wlanpi:/home/wlanpi/python# wlan-client-capability.py -c wlan0 aa:bb:cc:dd:ee:ff
+root@wlanpi:/home/wlanpi/python# wlan-client-capability.py -c wlan0 any
 
 ```
 
