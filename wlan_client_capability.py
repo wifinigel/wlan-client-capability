@@ -212,8 +212,8 @@ def PktHandler(frame):
 
 def Usage():
     print("\n Usage:\n")
-    print("    read_assoc_frame.py -f <filename>")
-    print("    read_assoc_frame.py -c <mon interface> < client_mac | any >\n")
+    print("    wlan_client_capability.py -f <filename>")
+    print("    wlan_client_capability.py -c <mon interface> < client_mac | any >\n")
     exit()
 
 #################################################
