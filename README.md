@@ -14,7 +14,7 @@ SSH to the NanoPi and place the wireless NIC on the channel you wish to monitor:
 wlanpi@wlanpi:~/python$ sudo -s
 [sudo] password for wlanpi: 
 root@wlanpi:/home/wlanpi/python#
-root@wlanpi:/home/wlanpi/python# airmon-ng check kill
+root@wlanpi:/home/wlanpi/python# airmon-ng check kill   (Note: you WILL have issues if you don;t run this)
 root@wlanpi:/home/wlanpi/python# airodump-ng wlan0 -c 48   (Specify channel required with '-c'. Kill with ctlr-c once running)
 root@wlanpi:/home/wlanpi/python# ./wlan_client_capability.py wlan0 any
 

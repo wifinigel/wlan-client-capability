@@ -3,6 +3,14 @@ from __future__ import print_function, unicode_literals, division
 import sys
 import textwrap
 from scapy.all import *
+import os
+
+# we must be root to run this script - exit with msg if not
+if not os.geteuid()==0:
+    print("\n#####################################################################################")
+    print("You must be root to run this script (use 'sudo wlan_client_capability.py') - exiting" )
+    print("#####################################################################################\n")
+    exit()
 
 #  assoc req frame tag list numbers
 
