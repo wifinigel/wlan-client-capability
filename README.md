@@ -16,7 +16,7 @@ wlanpi@wlanpi:~/python$ sudo -s
 root@wlanpi:/home/wlanpi/python#
 root@wlanpi:/home/wlanpi/python# airmon-ng check kill   (Note: you WILL have issues if you don;t run this)
 root@wlanpi:/home/wlanpi/python# airodump-ng wlan0 -c 48   (Specify channel required with '-c'. Kill with ctlr-c once running)
-root@wlanpi:/home/wlanpi/python# ./wlan_client_capability.py wlan0 any
+root@wlanpi:/home/wlanpi/python# ./wlan_client_-c capability.py wlan0 any
 
 ```
 ## Usage
