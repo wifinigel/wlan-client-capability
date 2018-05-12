@@ -1,5 +1,5 @@
 # wlan-client-capability
-Python script to check wireless (802.11) capabilities based on authentication frame contents
+Python script to check wireless (802.11) capabilities based on assoxiation request frame contents
 
 This script uses scapy to listen for an authenciation frame from a client. It will then capture that frame and analyze it to create a report based on the capabilities reported by the client device. It can also be used to analyze the contents of a pcap file that contains a single authentication frame.
 
@@ -37,13 +37,13 @@ root@wlanpi:/home/wlanpi/python# wlan-client-capability.py -c wlan0 aa:bb:cc:dd:
 ```
 
 ```
-# capture frame for next client that sends an assocation frame on interface wlan0
+# capture frame for next client that sends an assocation request frame on interface wlan0
 root@wlanpi:/home/wlanpi/python# wlan-client-capability.py -c wlan0 any
 
 ```
 
 ```
-# read last assocation frame captured by script (pcap file created automaticlaly each time script is run)
+# read last assocation req frame captured by script (pcap file created automaticlaly each time script is run)
 root@wlanpi:/home/wlanpi/python# wlan-client-capability.py -f last_frame.pcap
 ```
 
