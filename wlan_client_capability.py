@@ -148,14 +148,14 @@ def analyze_frame(assoc_req_frame, silent_mode=False, required_client=''):
         
         # bit 4 indicates support for both octets (1 = supported, 0 = not supported) 
         if (su_octet & beam_form_mask):
-            vht_support += ", SU BF suported"
+            vht_support += ", SU BF supported"
         else:
-            vht_support += ", SU BF not suported"
+            vht_support += ", SU BF not supported"
          
         if (mu_octet & beam_form_mask):
-            vht_support += ", MU BF suported"
+            vht_support += ", MU BF supported"
         else:
-            vht_support += ", MU BF not suported"
+            vht_support += ", MU BF not supported"
         
         capability_dict['802.11ac'] = vht_support
 
