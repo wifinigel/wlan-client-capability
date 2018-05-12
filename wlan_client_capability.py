@@ -175,11 +175,11 @@ def analyze_frame(assoc_req_frame, silent_mode=False, required_client=''):
         capability_dict['802.11r'] = 'Not reported*'
 
     # check if 11v supported
+    capability_dict['802.11v'] = 'Not reported*'
+    
     if ext_capabilities in dot11_elt_dict.keys():
     
         ext_cap_list = dot11_elt_dict[ext_capabilities]
-        
-        capability_dict['802.11v'] = 'Not reported*'
     
         # check octet 3 exists
         if 3 <= len(ext_cap_list):
@@ -193,6 +193,8 @@ def analyze_frame(assoc_req_frame, silent_mode=False, required_client=''):
                 capability_dict['802.11v'] = 'Supported'
     
     # check if power capabilites supported
+    capability_dict['Max_Power'] = 'Not reported'
+    
     if power_min_max in dot11_elt_dict.keys():
 
         # octet 3 of power capabilites
@@ -213,8 +215,15 @@ def analyze_frame(assoc_req_frame, silent_mode=False, required_client=''):
         start_channel = channel_sets_list.pop(0)
         channel_range = channel_sets_list.pop(0)
         
+        # check for if 2.4Ghz or 5GHz
+        if start_channel > 14:
+            channel_multiplier = 4
+        else:
+            channel_multiplier = 1
+            
+        
         for i in range(channel_range):
-            channel_list.append(start_channel + (i * 4))
+            channel_list.append(start_channel + (i * channel_multiplier))
     
     print("\nReported supported channel list:\n")
     channel_list_str = ', '.join(map(str, channel_list))
