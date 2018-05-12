@@ -118,6 +118,7 @@ def analyze_frame(assoc_req_frame, silent_mode=False, required_client=''):
     # check if 11ac supported
     if vht_capabilities in dot11_elt_dict.keys():
         
+        # Check for number streams supported
         mcs_upper_octet = dot11_elt_dict[vht_capabilities][5]
         mcs_lower_octet = dot11_elt_dict[vht_capabilities][4]
         mcs_rx_map = (mcs_upper_octet * 256) + mcs_lower_octet
@@ -137,7 +138,26 @@ def analyze_frame(assoc_req_frame, silent_mode=False, required_client=''):
             # shift to next mcs range bit pair (stream)
             stream_mask = stream_mask * 4
         
-        capability_dict['802.11ac'] = 'Supported (' + str(spatial_streams) + 'ss)'
+        vht_support = 'Supported (' + str(spatial_streams) + 'ss)'
+        
+        # check for SU & MU beam formee support
+        mu_octet = dot11_elt_dict[vht_capabilities][2]
+        su_octet = dot11_elt_dict[vht_capabilities][1]
+        
+        beam_form_mask = 8
+        
+        # bit 4 indicates support for both octets (1 = supported, 0 = not supported) 
+        if (su_octet & beam_form_mask):
+            vht_support += ", SU BF suported"
+        else:
+            vht_support += ", SU BF not suported"
+         
+        if (mu_octet & beam_form_mask):
+            vht_support += ", MU BF suported"
+        else:
+            vht_support += ", MU BF not suported"
+        
+        capability_dict['802.11ac'] = vht_support
 
     else:
         capability_dict['802.11ac'] = 'Not reported*'
