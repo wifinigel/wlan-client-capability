@@ -207,27 +207,31 @@ def analyze_frame(assoc_req_frame, silent_mode=False, required_client=''):
         print("{:<20} {:<20}".format(key, capability_dict[key]))
 
     # check supported channels
-    channel_sets_list = dot11_elt_dict[supported_channels]
-    channel_list = []
-    
-    while (channel_sets_list):
-    
-        start_channel = channel_sets_list.pop(0)
-        channel_range = channel_sets_list.pop(0)
+    if supported_channels in dot11_elt_dict.keys():
+        channel_sets_list = dot11_elt_dict[supported_channels]
+        channel_list = []
         
-        # check for if 2.4Ghz or 5GHz
-        if start_channel > 14:
-            channel_multiplier = 4
-        else:
-            channel_multiplier = 1
+        while (channel_sets_list):
+        
+            start_channel = channel_sets_list.pop(0)
+            channel_range = channel_sets_list.pop(0)
             
+            # check for if 2.4Ghz or 5GHz
+            if start_channel > 14:
+                channel_multiplier = 4
+            else:
+                channel_multiplier = 1
+                
+            
+            for i in range(channel_range):
+                channel_list.append(start_channel + (i * channel_multiplier))
         
-        for i in range(channel_range):
-            channel_list.append(start_channel + (i * channel_multiplier))
-    
-    print("\nReported supported channel list:\n")
-    channel_list_str = ', '.join(map(str, channel_list))
-    print(textwrap.fill(channel_list_str, 60))
+        print("\nReported supported channel list:\n")
+        channel_list_str = ', '.join(map(str, channel_list))
+        print(textwrap.fill(channel_list_str, 60))
+        
+    else:
+        print("{:<20} {:<20}".format("Supported channels", "Not reported"))
     
     print("\n\n" + textwrap.fill("* Reported client capabilities are dependant on these features being available from the wireless network at time of client association", 60) + "\n\n")
     
