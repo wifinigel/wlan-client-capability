@@ -54,6 +54,7 @@ root@wlanpi:/home/wlanpi/python# wlan-client-capability.py -f last_frame.pcap
 ## Caveats
 - Note that this is work in progress and is not production ready and is not fully tested or guaranteed to report accurate info. **You have been warned**
 - A client will generally only report the capabilities it has that match the network it associates to. If you want the client to report all of its capabilities, it **must** be associating with a network that supports those capabilities (e,g, a 3 stream client will not report it supports 3 streams if the AP is asscoiates with supports only one stream). **You have been warned**
+- Reporting of 802.11k capabilities is very poor among clients I have tested - treat with extreme caution (check for neighbor report requests from a WLC/AP debug to be sure)
 - I'm a newbie coder and there's plenty to improve here, but maybe someone may learn something from this, even if its only how NOT to do things :)
 
 ## Credits
