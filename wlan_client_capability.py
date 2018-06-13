@@ -166,7 +166,7 @@ def analyze_frame(assoc_req_frame, silent_mode=False, required_client=''):
     if rm_capabilities in dot11_elt_dict.keys():
         capability_dict['802.11k'] = 'Supported'
     else:
-        capability_dict['802.11k'] = 'Not reported*'
+        capability_dict['802.11k'] = 'Not reported* - treat with caution, many clients lie about this'
 
     # check if 11r supported
     if ft_capabilities in dot11_elt_dict.keys():
