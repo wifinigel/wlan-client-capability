@@ -82,9 +82,10 @@ def analyze_frame(assoc_req_frame, silent_mode=False, required_client=''):
         # covert tag list in to useable format (decimal list of values)
         dec_array = map(ord, str(dot11_elt_info))
         #hex_array = map(hex, dec_array)
-
+        DA = list()
+        for d in dec_array: DA.append(d)
         # store each tag list in a common tag dictionary
-        dot11_elt_dict[dot11_elt_id] = dec_array
+        dot11_elt_dict[dot11_elt_id] = DA #dec_array
         
         # move to next layer - end of while loop
         dot11_elt = dot11_elt.payload
