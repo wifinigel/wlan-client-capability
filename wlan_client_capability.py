@@ -1,16 +1,30 @@
 #!/usr/bin/python
-from __future__ import print_function, unicode_literals, division
-import sys
-import textwrap
-from scapy.all import *
-import os
 
-# we must be root to run this script - exit with msg if not
-if not os.geteuid()==0:
-    print("\n#####################################################################################")
-    print("You must be root to run this script (use 'sudo wlan_client_capability.py') - exiting" )
-    print("#####################################################################################\n")
-    exit()
+from fakeap import *
+from scapy.layers.dot11 import *
+import subprocess
+from types import MethodType
+import textwrap
+import sys
+
+# Set channel of fake AP
+channel = 36
+
+if_cmds = [
+    'ifconfig wlan0 down',
+    'iwconfig wlan0 mode monitor',
+    'ifconfig wlan0 up',
+    'iw wlan0 set channel ' + str(channel)
+]
+
+# run commands & check for failures
+for cmd in if_cmds:
+    try:            
+        subprocess.check_output(cmd + " 2>&1", shell=True)
+    except Exception as ex:
+        print("Error setting wlan interface config:")
+        print(ex)
+        sys.exit()
 
 #  assoc req frame tag list numbers
 
@@ -35,26 +49,25 @@ ext_capabilities   = "127"
 # 802.11ac support info
 vht_capabilities   = "191"
 
-def analyze_frame(assoc_req_frame, silent_mode=False, required_client=''):
+detected_clients = []
 
-    if not assoc_req_frame.haslayer(Dot11):
+def analyze_frame(self, packet, silent_mode=False, required_client=''):
     
-        if not silent_mode:
-            print("Sorry, this does not look like an 802.11 frame, exiting...")
-        
-        return(False)
-
-    if not assoc_req_frame.haslayer(Dot11AssoReq):
-    
-        if not silent_mode:
-            print("Sorry, this does not look like an Association frame, exiting...")
-        
-        return(False)
-
-
     # pull off the RadioTap, Dot11 & Dot11AssoReq layers
-    dot11 = assoc_req_frame.payload
+    dot11 = packet.payload
     frame_src_addr = dot11.addr2
+    
+    if frame_src_addr in detected_clients:
+        
+        # already analysed this client, moving on
+        print("Detected " + str(frame_src_addr) + " again, ignoring..." )
+        return(False)
+    
+    # add client to detected clients list
+    detected_clients.append(frame_src_addr)
+        
+    # dump out the frame to a file
+    wrpcap(frame_src_addr.replace(':', '-', 5) + '.pcap', [packet])  
     
     if required_client:
     
@@ -237,58 +250,25 @@ def analyze_frame(assoc_req_frame, silent_mode=False, required_client=''):
     
     return True
 
-def PktHandler(frame):
-    
-    required_client = sys.argv[3]
-    wrpcap('last_frame.pcap', [frame])
-    # attempt to analyze frame
-    if (analyze_frame(frame, True, required_client)):
-    
-        # we got an assocation request frame and analyzed it OK - dump & exit
-        wrpcap('last_frame.pcap', [frame])
-        exit()
-    else:
-        # frame incorrect type, lets try again...
-        return
+def my_recv_pkt(self, packet):  # We override recv_pkt to include a trigger for our callback
 
-def Usage():
-    print("\n Usage:\n")
-    print("    wlan_client_capability.py -f <filename>")
-    print("    wlan_client_capability.py -c <mon interface> < client_mac | any >\n")
-    exit()
+    if packet.haslayer(Dot11AssoReq):
+        self.cb_analyze_frame(packet) 
+    self.recv_pkt(packet)
 
-#################################################
-# Main
-#################################################
 def main():
-    if len(sys.argv) < 2:
-        Usage()
+    ap = FakeAccessPoint('wlan0', 'scapy')
+    my_callbacks = Callbacks(ap)
 
-    # Analyze client capabilities from pcap file
-    if sys.argv[1] == '-f':
-        # file name we are going to analyze
-        filename = sys.argv[2]
+    my_callbacks.cb_recv_pkt = MethodType(my_recv_pkt, my_callbacks)
+    my_callbacks.cb_analyze_frame = MethodType(analyze_frame, my_callbacks)
+    ap.callbacks = my_callbacks
 
-        # read in the pcap file
-        frame = rdpcap(filename)
-
-        # extract the first frame object
-        assoc_req_frame = frame[0]
-
-        # perform analysis
-        analyze_frame(assoc_req_frame)
-
-    # Analyze client capabilities of client capture association frame
-    elif sys.argv[1] == '-c':
-        # capture live
-        mon_iface = sys.argv[2]
-        client_mac = sys.argv[3]
+    # This seems to set the channel fine...
+    ap.channel = channel
+    # lower the beacon interval used to account for execution time of script
+    ap.beaconTransmitter.interval = 0.05
+    ap.run()
         
-        print("\n Listening for client association frames...\n")
-        
-        sniff(iface=mon_iface, prn=PktHandler)
-    else:
-        Usage()
-
 if __name__ == "__main__":
     main()
