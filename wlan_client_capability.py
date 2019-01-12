@@ -13,9 +13,9 @@ if not os.geteuid()==0:
     print("\n#####################################################################################")
     print("You must be root to run this script (use 'sudo wlan_client_capability.py') - exiting" )
     print("#####################################################################################\n")
-    exit()
+    sys.exit()
 
-# Set channel of fake AP
+# define fake AP parameters
 fakeap_channel = 36
 fakeap_ssid = 'scapy'
 
@@ -39,7 +39,7 @@ if_cmds = [
     'iw wlan0 set channel ' + str(fakeap_channel)
 ]
 
-# run commands & check for failures
+# run WLAN adapter setup commands & check for failures
 for cmd in if_cmds:
     try:            
         subprocess.check_output(cmd + " 2>&1", shell=True)
@@ -51,29 +51,34 @@ for cmd in if_cmds:
 #  assoc req frame tag list numbers
 
 # power information
-power_min_max = "33"
+POWER_MIN_MAX_TAG = "33"
 
 # channels supported by client
-supported_channels = "36"
+SUPPORTED_CHANNELS_TAG = "36"
 
 # 802.11n support info
-ht_capabilities    = "45"
+HT_CAPABILITIES_TAG    = "45"
 
 # 802.11r support info
-ft_capabilities    = "54"
+FT_CAPABILITIES_TAG    = "54"
 
 # 802.11k support info
-rm_capabilities    = "70"
+RM_CAPABILITIES_TAG    = "70"
 
 # 802.11v
-ext_capabilities   = "127"
+EXT_CAPABILITIES_TAG   = "127"
 
 # 802.11ac support info
-vht_capabilities   = "191"
+VHT_CAPABILITIES_TAG   = "191"
 
+# list of detected clients
 detected_clients = []
 
-def analyze_frame(self, packet, silent_mode=False, required_client=''):
+def analyze_frame_cb(self, packet, silent_mode=False, required_client=''):
+
+        analyze_frame(packet, silent_mode, required_client)
+
+def analyze_frame(packet, silent_mode=False, required_client=''):
     
     # pull off the RadioTap, Dot11 & Dot11AssoReq layers
     dot11 = packet.payload
@@ -107,7 +112,7 @@ def analyze_frame(self, packet, silent_mode=False, required_client=''):
     # common dictionary to store all tag lists
     dot11_elt_dict = {}
 
-    # analyse the tag lists & store in a dictionary
+    # analyse the 802.11 frame tag lists & store in a dictionary
     while dot11_elt:
 
         # get tag number
@@ -126,10 +131,11 @@ def analyze_frame(self, packet, silent_mode=False, required_client=''):
         # move to next layer - end of while loop
         dot11_elt = dot11_elt.payload
     
+    # dictionary to store capabilities as we decode them
     capability_dict = {}
     
     # check if 11n supported
-    if ht_capabilities in dot11_elt_dict.keys():
+    if HT_CAPABILITIES_TAG in dot11_elt_dict.keys():
         capability_dict['802.11n'] = 'Supported'
         
         spatial_streams = 0
@@ -137,7 +143,7 @@ def analyze_frame(self, packet, silent_mode=False, required_client=''):
         # mcs octets 1 - 4 indicate # streams supported (up to 4 streams only)
         for mcs_octet in range(3, 7):
         
-            mcs_octet_value = dot11_elt_dict[ht_capabilities][mcs_octet]
+            mcs_octet_value = dot11_elt_dict[HT_CAPABILITIES_TAG][mcs_octet]
         
             if (mcs_octet_value & 255):
                 spatial_streams += 1
@@ -147,11 +153,11 @@ def analyze_frame(self, packet, silent_mode=False, required_client=''):
         capability_dict['802.11n'] = 'Not reported*'
         
     # check if 11ac supported
-    if vht_capabilities in dot11_elt_dict.keys():
+    if VHT_CAPABILITIES_TAG in dot11_elt_dict.keys():
         
         # Check for number streams supported
-        mcs_upper_octet = dot11_elt_dict[vht_capabilities][5]
-        mcs_lower_octet = dot11_elt_dict[vht_capabilities][4]
+        mcs_upper_octet = dot11_elt_dict[VHT_CAPABILITIES_TAG][5]
+        mcs_lower_octet = dot11_elt_dict[VHT_CAPABILITIES_TAG][4]
         mcs_rx_map = (mcs_upper_octet * 256) + mcs_lower_octet
         
         # define the bit pair we need to look at
@@ -172,8 +178,8 @@ def analyze_frame(self, packet, silent_mode=False, required_client=''):
         vht_support = 'Supported (' + str(spatial_streams) + 'ss)'
         
         # check for SU & MU beam formee support
-        mu_octet = dot11_elt_dict[vht_capabilities][2]
-        su_octet = dot11_elt_dict[vht_capabilities][1]
+        mu_octet = dot11_elt_dict[VHT_CAPABILITIES_TAG][2]
+        su_octet = dot11_elt_dict[VHT_CAPABILITIES_TAG][1]
         
         beam_form_mask = 8
         
@@ -194,13 +200,13 @@ def analyze_frame(self, packet, silent_mode=False, required_client=''):
         capability_dict['802.11ac'] = 'Not reported*'
         
     # check if 11k supported
-    if rm_capabilities in dot11_elt_dict.keys():
+    if RM_CAPABILITIES_TAG in dot11_elt_dict.keys():
         capability_dict['802.11k'] = 'Supported'
     else:
         capability_dict['802.11k'] = 'Not reported* - treat with caution, many clients lie about this'
 
     # check if 11r supported
-    if ft_capabilities in dot11_elt_dict.keys():
+    if FT_CAPABILITIES_TAG in dot11_elt_dict.keys():
         capability_dict['802.11r'] = 'Supported'
     else:
         capability_dict['802.11r'] = 'Not reported*'
@@ -208,9 +214,9 @@ def analyze_frame(self, packet, silent_mode=False, required_client=''):
     # check if 11v supported
     capability_dict['802.11v'] = 'Not reported*'
     
-    if ext_capabilities in dot11_elt_dict.keys():
+    if EXT_CAPABILITIES_TAG in dot11_elt_dict.keys():
     
-        ext_cap_list = dot11_elt_dict[ext_capabilities]
+        ext_cap_list = dot11_elt_dict[EXT_CAPABILITIES_TAG]
     
         # check octet 3 exists
         if 3 <= len(ext_cap_list):
@@ -226,16 +232,16 @@ def analyze_frame(self, packet, silent_mode=False, required_client=''):
     # check if power capabilites supported
     capability_dict['Max_Power'] = 'Not reported'
     
-    if power_min_max in dot11_elt_dict.keys():
+    if POWER_MIN_MAX_TAG in dot11_elt_dict.keys():
 
         # octet 3 of power capabilites
-        max_power = dot11_elt_dict[power_min_max][1]
+        max_power = dot11_elt_dict[POWER_MIN_MAX_TAG][1]
         
         capability_dict['Max_Power'] = str(max_power) + " dBm"
 
     # check supported channels
-    if supported_channels in dot11_elt_dict.keys():
-        channel_sets_list = dot11_elt_dict[supported_channels]
+    if SUPPORTED_CHANNELS_TAG in dot11_elt_dict.keys():
+        channel_sets_list = dot11_elt_dict[SUPPORTED_CHANNELS_TAG]
         channel_list = []
         
         while (channel_sets_list):
@@ -286,7 +292,7 @@ def run_fakeap(wlan_if, fakeap_ssid):
     my_callbacks = Callbacks(ap)
 
     my_callbacks.cb_recv_pkt = MethodType(my_recv_pkt, my_callbacks)
-    my_callbacks.cb_analyze_frame = MethodType(analyze_frame, my_callbacks)
+    my_callbacks.cb_analyze_frame = MethodType(analyze_frame_cb, my_callbacks)
     ap.callbacks = my_callbacks
 
     # set fake AP channel
