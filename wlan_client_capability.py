@@ -6,15 +6,37 @@ import subprocess
 from types import MethodType
 import textwrap
 import sys
+import os
+
+# we must be root to run this script - exit with msg if not
+if not os.geteuid()==0:
+    print("\n#####################################################################################")
+    print("You must be root to run this script (use 'sudo wlan_client_capability.py') - exiting" )
+    print("#####################################################################################\n")
+    exit()
 
 # Set channel of fake AP
-channel = 36
+fakeap_channel = 36
+fakeap_ssid = 'scapy'
 
+# set dir to dump capture frames
+dump_dir = '/var/www/html/pcap'
+
+# check if dump dir exists, create if not
+if not os.path.isdir(dump_dir):
+    try:
+        os.mkdir(dump_dir)
+    except Exception as ex:
+        print("Trying to create directory: {} but having an issue: {}".format(dump_dir, ex))
+        print("Exiting...")
+        sys.exit()
+
+# set up the WLAN adapter
 if_cmds = [
     'ifconfig wlan0 down',
     'iwconfig wlan0 mode monitor',
     'ifconfig wlan0 up',
-    'iw wlan0 set channel ' + str(channel)
+    'iw wlan0 set channel ' + str(fakeap_channel)
 ]
 
 # run commands & check for failures
@@ -67,7 +89,9 @@ def analyze_frame(self, packet, silent_mode=False, required_client=''):
     detected_clients.append(frame_src_addr)
         
     # dump out the frame to a file
-    wrpcap(frame_src_addr.replace(':', '-', 5) + '.pcap', [packet])  
+    mac_addr = frame_src_addr.replace(':', '-', 5)
+    dump_filename = dump_dir + '/' + mac_addr + '.pcap'
+    wrpcap(dump_filename, [packet])  
     
     if required_client:
     
@@ -101,12 +125,6 @@ def analyze_frame(self, packet, silent_mode=False, required_client=''):
         
         # move to next layer - end of while loop
         dot11_elt = dot11_elt.payload
-
-    # start report
-    print('\n')
-    print('-' * 60)
-    print("Client capabilites report - Client MAC: " + frame_src_addr)
-    print('-' * 60)
     
     capability_dict = {}
     
@@ -214,10 +232,6 @@ def analyze_frame(self, packet, silent_mode=False, required_client=''):
         max_power = dot11_elt_dict[power_min_max][1]
         
         capability_dict['Max_Power'] = str(max_power) + " dBm"
-    
-    # print out capabilities (in nice format)
-    for key in capability_dict.keys():
-        print("{:<20} {:<20}".format(key, capability_dict[key]))
 
     # check supported channels
     if supported_channels in dot11_elt_dict.keys():
@@ -239,16 +253,47 @@ def analyze_frame(self, packet, silent_mode=False, required_client=''):
             for i in range(channel_range):
                 channel_list.append(start_channel + (i * channel_multiplier))
         
-        print("\nReported supported channel list:\n")
-        channel_list_str = ', '.join(map(str, channel_list))
-        print(textwrap.fill(channel_list_str, 60))
+        capability_dict['Supported_Channels'] = ', '.join(map(str, channel_list))
         
     else:
-        print("{:<20} {:<20}".format("Supported channels", "Not reported"))
+        capability_dict['Supported_Channels'] =  "Not reported"
     
-    print("\n\n" + textwrap.fill("* Reported client capabilities are dependant on these features being available from the wireless network at time of client association", 60) + "\n\n")
+    # print our report to stdout
+    text_report(frame_src_addr, capability_dict)
     
     return True
+
+def text_report(frame_src_addr, capability_dict):
+
+    # start report
+    print('\n')
+    print('-' * 60)
+    print("Client capabilites report - Client MAC: " + frame_src_addr)
+    print('-' * 60)
+    
+    # print out capabilities (in nice format)
+    capabilities = ['802.11k', '802.11r', '802.11v', '802.11n', '802.11ac', 'Max_Power', 'Supported_Channels']
+    for key in capabilities:
+        print("{:<20} {:<20}".format(key, capability_dict[key]))
+    
+    print("\n\n" + textwrap.fill("* Reported client capabilities are dependant on these features being available from the wireless network at time of client association", 60) + "\n\n")
+
+    return True
+
+def run_fakeap(wlan_if, fakeap_ssid):
+
+    ap = FakeAccessPoint('wlan0', fakeap_ssid)
+    my_callbacks = Callbacks(ap)
+
+    my_callbacks.cb_recv_pkt = MethodType(my_recv_pkt, my_callbacks)
+    my_callbacks.cb_analyze_frame = MethodType(analyze_frame, my_callbacks)
+    ap.callbacks = my_callbacks
+
+    # set fake AP channel
+    ap.channel = fakeap_channel
+    # lower the beacon interval used to account for execution time of script
+    ap.beaconTransmitter.interval = 0.05
+    ap.run()
 
 def my_recv_pkt(self, packet):  # We override recv_pkt to include a trigger for our callback
 
@@ -256,19 +301,53 @@ def my_recv_pkt(self, packet):  # We override recv_pkt to include a trigger for 
         self.cb_analyze_frame(packet) 
     self.recv_pkt(packet)
 
+def usage():
+    print("\n Usage:\n")
+    print("    wlan_client_capability.py --all")
+    print("    wlan_client_capability.py --pcap <filename>")
+    print("    wlan_client_capability.py --client <mon interface> < client_mac | any >\n")
+    exit()
+
 def main():
-    ap = FakeAccessPoint('wlan0', 'scapy')
-    my_callbacks = Callbacks(ap)
 
-    my_callbacks.cb_recv_pkt = MethodType(my_recv_pkt, my_callbacks)
-    my_callbacks.cb_analyze_frame = MethodType(analyze_frame, my_callbacks)
-    ap.callbacks = my_callbacks
+    # Default action run fakeap & analyze assoc req frames
+    if len(sys.argv) < 2:
+        run_fakeap('wlan0', fakeap_ssid)
+        
+    elif sys.argv[1] == '--all':
+        run_fakeap('wlan0', fakeap_ssid)
+    
+    # Analyze client capabilities from pcap file
+    elif sys.argv[1] == '--pcap':
+        # file name we are going to analyze
+        filename = sys.argv[2]
 
-    # This seems to set the channel fine...
-    ap.channel = channel
-    # lower the beacon interval used to account for execution time of script
-    ap.beaconTransmitter.interval = 0.05
-    ap.run()
+        # read in the pcap file
+        frame = rdpcap(filename)
+
+        # extract the first frame object
+        assoc_req_frame = frame[0]
+
+        # perform analysis
+        analyze_frame(assoc_req_frame)
+
+    # Analyze client capabilities of client capture association frame
+    elif sys.argv[1] == '--client':
+        # capture live
+        mon_iface = sys.argv[2]
+        client_mac = sys.argv[3]
+        
+        print("\n Listening for client association frames...\n")
+        
+        sniff(iface=mon_iface, prn=PktHandler)
+     # Analyze client capabilities of client capture association frame
+    elif sys.argv[1] == '--help':
+        usage()
+    
+    else:
+        Usage()
+
+    
         
 if __name__ == "__main__":
     main()
