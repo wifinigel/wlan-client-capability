@@ -1,4 +1,7 @@
 # wlan-client-capability
+
+**Note : this project has now bene moth-balled and updated over at this URL: https://github.com/WLAN-Pi/profiler**
+
 Python script to check wireless (802.11) capabilities based on association request frame contents
 
 This script uses scapy to listen for an authenciation frame from a client. It will then capture that frame and analyze it to create a report based on the capabilities reported by the client device. It can also be used to analyze the contents of a pcap file that contains a single authentication frame.
